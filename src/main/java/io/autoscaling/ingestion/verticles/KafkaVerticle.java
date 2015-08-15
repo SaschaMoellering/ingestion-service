@@ -1,7 +1,7 @@
 package io.autoscaling.ingestion.verticles;
 
-import io.autoscaling.ingestion.helper.AmazonUtil;
 import io.autoscaling.ingestion.helper.Constants;
+import io.autoscaling.proto.AddressBookProtos;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.EventBus;
@@ -14,7 +14,6 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
-import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.Future;
 
@@ -33,6 +32,7 @@ public class KafkaVerticle extends AbstractVerticle {
         EventBus eb = vertx.eventBus();
 
         producer = this.createKafkaProducer();
+        LOGGER.info("Created consumer");
 
         eb.consumer(Constants.EVENTBUS_ADDRESS, message -> {
 
@@ -41,17 +41,16 @@ public class KafkaVerticle extends AbstractVerticle {
                 String topic = multiMap.get(Constants.TOPIC);
                 String messageKey = multiMap.get(Constants.MESSAGE_KEY);
 
-                Object messageBody = message.body();
-                byte[] messageContent = AmazonUtil.toByteArray(messageBody);
+                Integer messageBody = (Integer)message.body();
+                LOGGER.info("Sending body: " + messageBody);
 
-                Future<RecordMetadata> future = producer.send(new ProducerRecord<>(topic, messageKey, messageContent));
+                Future<RecordMetadata> future = producer.send(new ProducerRecord<>(topic, messageKey, createMessage(messageBody)));
 
                 // Now send back reply
                 message.reply("OK");
-            } catch (IOException exc) {
+            } catch (Exception exc) {
                 LOGGER.error(exc);
             }
-
         });
 
         LOGGER.info("Receiver ready!");
@@ -62,6 +61,25 @@ public class KafkaVerticle extends AbstractVerticle {
         if (producer != null) {
             producer.close();
         }
+    }
+
+    private byte[] createMessage(int id) {
+        AddressBookProtos.Person.Builder personBuilder = AddressBookProtos.Person.newBuilder();
+        personBuilder.setId(id);
+        personBuilder.setName("Jon Doe");
+        personBuilder.setEmail("jon.doe@test.com");
+        AddressBookProtos.Person.PhoneNumber.Builder phoneNumber =
+                AddressBookProtos.Person.PhoneNumber.newBuilder().setNumber("049 0176 0815");
+        phoneNumber.setType(AddressBookProtos.Person.PhoneType.MOBILE);
+        personBuilder.addPhone(phoneNumber);
+        AddressBookProtos.Person person = personBuilder.build();
+
+        AddressBookProtos.AddressBook.Builder addressBookBuilder = AddressBookProtos.AddressBook.newBuilder();
+        addressBookBuilder.addPerson(person);
+        AddressBookProtos.AddressBook addressBook = addressBookBuilder.build();
+        byte[] addressBookBytes = addressBook.toByteArray();
+
+        return addressBookBytes;
     }
 
     private KafkaProducer<String, byte[]> createKafkaProducer() {

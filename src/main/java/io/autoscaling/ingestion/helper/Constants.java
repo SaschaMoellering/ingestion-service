@@ -10,5 +10,5 @@ public class Constants {
     public static final String TOPIC = "TOPIC";
     public static final String MESSAGE_KEY = "MESSAGE_KEY";
 
-    public static final String KAFKA_SERVERS = "localhost:9092";
+    public static final String KAFKA_SERVERS = "192.168.59.103:9092";
 }

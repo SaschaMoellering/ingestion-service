@@ -2,6 +2,7 @@ package io.autoscaling.ingestion.verticles;
 
 import io.autoscaling.ingestion.helper.AmazonUtil;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
@@ -17,7 +18,7 @@ public class StarterVerticle extends AbstractVerticle {
 
         LOGGER.info("Main verticle has started, let's deploy some others...");
 
-        this.deployVerticle("io.autoscaling.ingestion.verticles.PublishVerticle");
+        this.deployVerticle(PublishVerticle.class.getCanonicalName(), false);
 
         AmazonUtil amazonUtil = AmazonUtil.getInstance();
 
@@ -31,29 +32,22 @@ public class StarterVerticle extends AbstractVerticle {
             messageVerticle = KafkaVerticle.class.getCanonicalName();
         }
 
-        this.deployVerticle(messageVerticle);
+        this.deployVerticle(messageVerticle, true);
     }
 
-    private void deployVerticle(String verticle) {
+    private void deployVerticle(String verticle, boolean isWorker) {
         LOGGER.info("Deploying " + verticle);
-        vertx.deployVerticle(verticle, res -> {
+        DeploymentOptions options = new DeploymentOptions().setWorker(false);
+
+        if (isWorker)
+            options = new DeploymentOptions().setWorker(true);
+
+        vertx.deployVerticle(verticle, options, res -> {
             if (res.succeeded()) {
 
                 String deploymentID = res.result();
 
-                LOGGER.info("Other verticle deployed ok, deploymentID = " + deploymentID);
-
-                // You can also explicitly undeploy a verticle deployment.
-                // Note that this is usually unnecessary as any verticles deployed by a verticle will be automatically
-                // undeployed when the parent verticle is undeployed
-
-                vertx.undeploy(deploymentID, res2 -> {
-                    if (res2.succeeded()) {
-                        LOGGER.info("Undeployed ok!");
-                    } else {
-                        LOGGER.error(res2.cause());
-                    }
-                });
+                LOGGER.info("Verticle deployed ok, deploymentID = " + deploymentID);
 
             } else {
                 LOGGER.error(res.cause());
