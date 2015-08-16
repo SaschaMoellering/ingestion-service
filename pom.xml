@@ -13,6 +13,7 @@
         <!-- the main class -->
         <main.class>io.autoscaling.ingestion.verticles.StarterVerticle</main.class>
         <vertx.version>3.0.0</vertx.version>
+        <maven.resources.plugin.version>2.7</maven.resources.plugin.version>
     </properties>
 
     <dependencies>
@@ -65,6 +66,36 @@
         java -jar
         -->
         <plugins>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${maven.resources.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>copyFilesForDocker</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/docker</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/docker</directory>
+                                    <includes>
+                                        <include>Dockerfile</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>${basedir}/target</directory>
+                                    <includes>
+                                        <include>*-fat.jar</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
