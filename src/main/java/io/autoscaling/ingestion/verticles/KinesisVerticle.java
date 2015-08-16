@@ -2,6 +2,7 @@ package io.autoscaling.ingestion.verticles;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.retry.RetryPolicy;
 import com.amazonaws.services.kinesis.AmazonKinesisAsyncClient;
@@ -122,7 +123,7 @@ public class KinesisVerticle extends AbstractVerticle {
         clientConfiguration.setUserAgent(userAgent);
 
         // Reading credentials from ENV-variables
-        AWSCredentialsProvider awsCredentialsProvider = new EnvironmentVariableCredentialsProvider();
+        AWSCredentialsProvider awsCredentialsProvider = new DefaultAWSCredentialsProviderChain();
 
         // Configuring Kinesis-client with configuration
         AmazonKinesisAsyncClient kinesisAsyncClient = new AmazonKinesisAsyncClient(awsCredentialsProvider, clientConfiguration);
