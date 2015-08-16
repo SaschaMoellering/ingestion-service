@@ -16,7 +16,6 @@ WORKDIR /data
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
 ADD ingestion-service-*-fat.jar data/
-RUN ls -la ./ && ls -la data/
 
 CMD java -server -XX:+DoEscapeAnalysis -XX:+UseStringDeduplication -XX:+UseCompressedOops -XX:+UseG1GC \
 		-XX:MaxGCPauseMillis=5 -XX:MaxTenuringThreshold=5 -Xmx1024M -Xms1024M -XX:+AggressiveOpts \
