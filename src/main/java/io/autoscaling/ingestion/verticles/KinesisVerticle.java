@@ -4,19 +4,25 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.retry.RetryPolicy;
 import com.amazonaws.services.kinesis.AmazonKinesisAsyncClient;
+import com.amazonaws.services.kinesis.model.ListStreamsRequest;
+import com.amazonaws.services.kinesis.model.ListStreamsResult;
 import com.amazonaws.services.kinesis.model.PutRecordRequest;
 import com.amazonaws.services.kinesis.model.PutRecordResult;
 import io.autoscaling.ingestion.exceptions.KinesisException;
 import io.autoscaling.ingestion.helper.AmazonUtil;
 import io.autoscaling.ingestion.helper.Constants;
+import io.autoscaling.proto.AddressBookProtos;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.EventBus;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -30,7 +36,6 @@ public class KinesisVerticle extends AbstractVerticle {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KinesisVerticle.class);
 
-    private String streamName;
     private AmazonKinesisAsyncClient kinesisAsyncClient;
 
     @Override
@@ -43,16 +48,15 @@ public class KinesisVerticle extends AbstractVerticle {
 
             try {
                 MultiMap multiMap = message.headers();
-                String partitionKey = multiMap.get(Constants.PARTITION_KEY);
-                Object messageBody = message.body();
-                ByteBuffer buf = ByteBuffer.wrap(AmazonUtil.toByteArray(messageBody));
+                String partitionKey = multiMap.get(Constants.MESSAGE_KEY);
+                Integer randomId = (Integer)message.body();
+                byte [] byteMessage = createMessage(randomId);
+                ByteBuffer buf = ByteBuffer.wrap(byteMessage);
 
                 sendMessageToKinesis(buf, partitionKey);
 
                 // Now send back reply
                 message.reply("OK");
-            } catch (IOException exc) {
-                LOGGER.error(exc);
             }
             catch (KinesisException exc) {
                 LOGGER.error(exc);
@@ -75,10 +79,10 @@ public class KinesisVerticle extends AbstractVerticle {
         }
 
         PutRecordRequest putRecordRequest = new PutRecordRequest();
-        putRecordRequest.setStreamName(streamName);
+        putRecordRequest.setStreamName(Constants.STREAM_NAME);
         putRecordRequest.setPartitionKey(partitionKey);
 
-        LOGGER.info("Writing to streamName " + streamName + " using partitionkey " + partitionKey);
+        LOGGER.info("Writing to streamName " + Constants.STREAM_NAME + " using partitionkey " + partitionKey);
 
         putRecordRequest.setData(payload);
 
@@ -98,6 +102,25 @@ public class KinesisVerticle extends AbstractVerticle {
         }
     }
 
+    private byte[] createMessage(int id) {
+        AddressBookProtos.Person.Builder personBuilder = AddressBookProtos.Person.newBuilder();
+        personBuilder.setId(id);
+        personBuilder.setName("Jon Doe");
+        personBuilder.setEmail("jon.doe@test.com");
+        AddressBookProtos.Person.PhoneNumber.Builder phoneNumber =
+                AddressBookProtos.Person.PhoneNumber.newBuilder().setNumber("049 0176 0815");
+        phoneNumber.setType(AddressBookProtos.Person.PhoneType.MOBILE);
+        personBuilder.addPhone(phoneNumber);
+        AddressBookProtos.Person person = personBuilder.build();
+
+        AddressBookProtos.AddressBook.Builder addressBookBuilder = AddressBookProtos.AddressBook.newBuilder();
+        addressBookBuilder.addPerson(person);
+        AddressBookProtos.AddressBook addressBook = addressBookBuilder.build();
+        byte[] addressBookBytes = addressBook.toByteArray();
+
+        return addressBookBytes;
+    }
+
     private boolean isValid(String str) {
         return str != null && !str.isEmpty();
     }
@@ -112,7 +135,6 @@ public class KinesisVerticle extends AbstractVerticle {
         int socketTimeout = ClientConfiguration.DEFAULT_SOCKET_TIMEOUT;
         boolean useReaper = ClientConfiguration.DEFAULT_USE_REAPER;
         String userAgent = ClientConfiguration.DEFAULT_USER_AGENT;
-        streamName = Constants.STREAM_NAME;
 
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         clientConfiguration.setConnectionTimeout(connectionTimeout);
@@ -127,6 +149,8 @@ public class KinesisVerticle extends AbstractVerticle {
 
         // Configuring Kinesis-client with configuration
         AmazonKinesisAsyncClient kinesisAsyncClient = new AmazonKinesisAsyncClient(awsCredentialsProvider, clientConfiguration);
+        kinesisAsyncClient.withRegion(Region.getRegion(Regions.EU_WEST_1));
+        kinesisAsyncClient.withEndpoint("kinesis.eu-west-1.amazonaws.com");
 
         return kinesisAsyncClient;
     }
