@@ -149,8 +149,8 @@ public class KinesisVerticle extends AbstractVerticle {
 
         // Configuring Kinesis-client with configuration
         AmazonKinesisAsyncClient kinesisAsyncClient = new AmazonKinesisAsyncClient(awsCredentialsProvider, clientConfiguration);
-        kinesisAsyncClient.withRegion(Region.getRegion(Regions.EU_WEST_1));
-        kinesisAsyncClient.withEndpoint("kinesis.eu-west-1.amazonaws.com");
+        Regions myRegion = Regions.fromName(AmazonUtil.getInstance().getRegion());
+        kinesisAsyncClient.withRegion(Region.getRegion(myRegion));
 
         return kinesisAsyncClient;
     }
