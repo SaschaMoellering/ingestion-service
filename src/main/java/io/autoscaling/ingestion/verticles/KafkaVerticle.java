@@ -84,7 +84,13 @@ public class KafkaVerticle extends AbstractVerticle {
 
     private KafkaProducer<String, byte[]> createKafkaProducer() {
         Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Constants.KAFKA_SERVERS);
+
+        String kafkaServers = System.getenv().get("KAFKA_SERVERS");
+        if (null == kafkaServers) {
+            kafkaServers = Constants.KAFKA_SERVERS;
+        }
+
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServers);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
