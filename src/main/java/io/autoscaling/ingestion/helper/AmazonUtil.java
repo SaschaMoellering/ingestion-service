@@ -17,7 +17,7 @@ public class AmazonUtil {
     public static final String METADATA_URL = "http://169.254.169.254/latest/meta-data/placement/availability-zone";
     public static final String REGION = "region";
     public static final String DEFAULT_REGION = "eu-west-1";
-    private static final int TIMEOUT = 50;
+    private static final int TIMEOUT = 5000;
     private static final AmazonUtil AMAZON_UTIL = new AmazonUtil();
     private Boolean isAmazon;
     private String instanceId = null;
@@ -65,10 +65,14 @@ public class AmazonUtil {
                 URL url = new URL(METADATA_URL);
                 URLConnection connection = url.openConnection();
                 connection.setConnectTimeout(TIMEOUT);
+                connection.setReadTimeout(TIMEOUT);
                 in = new BufferedReader(new InputStreamReader(
                         connection.getInputStream()));
             } catch (IOException exc) {
                 isAmazon = false;
+                exc.printStackTrace();
+                LOGGER.info("Connecting to " + METADATA_URL + " does not work");
+                LOGGER.error(exc);
             } finally {
                 try {
                     if (in != null) {

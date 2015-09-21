@@ -1,15 +1,11 @@
 package io.autoscaling.ingestion.verticles;
 
 import io.autoscaling.ingestion.helper.Constants;
-import io.autoscaling.proto.AddressBookProtos;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-
-import java.nio.ByteBuffer;
-import java.util.Random;
 
 /**
  * Created by saschamoellering on 06/08/15.

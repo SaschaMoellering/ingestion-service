@@ -23,6 +23,7 @@ public class StarterVerticle extends AbstractVerticle {
         AmazonUtil amazonUtil = AmazonUtil.getInstance();
 
         String messageVerticle = "";
+        LOGGER.info("Are we running in AWS? " + amazonUtil.isEnvironmentAWS());
         if (amazonUtil.isEnvironmentAWS()) {
             // We register Kinesis verticle to event bus
             messageVerticle = KinesisVerticle.class.getCanonicalName();

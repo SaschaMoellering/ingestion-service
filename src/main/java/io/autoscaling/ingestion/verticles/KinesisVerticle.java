@@ -50,6 +50,9 @@ public class KinesisVerticle extends AbstractVerticle {
                 MultiMap multiMap = message.headers();
                 String partitionKey = multiMap.get(Constants.MESSAGE_KEY);
                 Integer randomId = (Integer)message.body();
+
+                LOGGER.info("Sending body: " + randomId + " from KinesisVerticle");
+
                 byte [] byteMessage = createMessage(randomId);
                 ByteBuffer buf = ByteBuffer.wrap(byteMessage);
 

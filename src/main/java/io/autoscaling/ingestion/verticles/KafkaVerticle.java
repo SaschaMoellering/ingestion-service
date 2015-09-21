@@ -45,6 +45,7 @@ public class KafkaVerticle extends AbstractVerticle {
                 LOGGER.info("Sending body: " + messageBody);
 
                 Future<RecordMetadata> future = producer.send(new ProducerRecord<>(topic, messageKey, createMessage(messageBody)));
+                RecordMetadata meta = future.get();
 
                 // Now send back reply
                 message.reply("OK");
