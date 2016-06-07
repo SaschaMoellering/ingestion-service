@@ -160,7 +160,7 @@ public class KafkaKinesisIntegrationTest {
     private void startContainer() throws Exception {
         final DockerClient dockerClient = DefaultDockerClient.fromEnv().build();
         logger.info("Pulling image spotify/kafka");
-        //dockerClient.pull("spotify/kafka");
+        dockerClient.pull("spotify/kafka");
         final String[] ports = {"2181", "9092"};
         List<String> env = new ArrayList<>();
         env.add("ADVERTISED_PORT=9092");
